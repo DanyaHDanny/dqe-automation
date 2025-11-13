@@ -57,9 +57,9 @@ pipeline {
                         mkdir -p "${env.REPORT_DIR}"
                         . venv/bin/activate
                         export PYTHONPATH=\$WORKSPACE
-                        pytest --db_user ${DB_CREDENTIALS_USR} \\
-                               --db_password ${DB_CREDENTIALS_PSW} \\
-                               --html=${env.REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html \\
+                        pytest --db_user ${DB_CREDENTIALS_USR} \
+                               --db_password ${DB_CREDENTIALS_PSW} \
+                               --html=${env.REPORT_DIR}/report_\$(date +%Y%m%d_%H%M%S).html \
                                --self-contained-html -v
                     """
                 }
@@ -70,12 +70,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed.'
-            node {
-                script {
-                    // Archive HTML reports
-                    archiveArtifacts artifacts: "${env.PROJECT_DIR}/${env.REPORT_DIR}/*.html", fingerprint: true
-                }
-            }
+            archiveArtifacts artifacts: "${env.PROJECT_DIR}/${env.REPORT_DIR}/*.html", fingerprint: true
         }
         success {
             echo 'Pipeline executed successfully!'
