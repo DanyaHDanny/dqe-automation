@@ -75,7 +75,7 @@ pipeline {
             echo 'Pipeline execution completed.'
             script {
                 // Archive HTML reports safely
-                archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
+                archiveArtifacts artifacts: "${env.PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
             }
         }
         success {
