@@ -22,11 +22,7 @@ pipeline {
             }
         }
 
-        stage('Clone Repository') {
-            steps {
-                git branch: 'pytest_dq_framework', url: 'https://github.com/vlad89buzan/dqe-automation.git'
-            }
-        }
+        // Removed 'Clone Repository' stage as it's redundant
 
         stage('Set Up Environment') {
             steps {
@@ -51,18 +47,20 @@ pipeline {
             steps {
                 sh """
                     mkdir -p "${PROJECT_DIR}/${REPORT_DIR}"
-                    parquet_path="${JENKINS_PARQUET_PATH:-${LOCAL_PARQUET_PATH}}"
-                    echo "Using parquet path: $parquet_path"
+                    parquet_path="\${JENKINS_PARQUET_PATH:-\${LOCAL_PARQUET_PATH}}"
+                    echo "Using parquet path: \$parquet_path"
 
                     cd "${PROJECT_DIR}"
                     . venv/bin/activate
                     export PYTHONPATH="\$WORKSPACE"
+                    export PARQUET_ROOT_PATH="\$parquet_path"  # Added: For test fixtures
 
                     # Run pytest securely
                     pytest \\
                         --db_user "${DB_CREDENTIALS_USR}" \\
                         --db_password "${DB_CREDENTIALS_PSW}" \\
-                        --html="${REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html" \\
+                        --db_name "${DB_NAME}"  # Added: If needed by fixtures
+                        --html="${REPORT_DIR}/report_$(date +%Y%m%d_%H%M%S).html" \\
                         --self-contained-html -v
                 """
             }
@@ -72,7 +70,11 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed.'
-            archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
+            script {
+                node {  # Added: Ensure agent context
+                    archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true, allowEmptyArchive: true
+                }
+            }
         }
         success {
             echo 'Pipeline executed successfully!'
