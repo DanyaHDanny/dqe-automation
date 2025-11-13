@@ -71,7 +71,7 @@ pipeline {
         always {
             echo 'Pipeline execution completed.'
             script {
-                node {  # Added: Ensure agent context
+                node {
                     archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true, allowEmptyArchive: true
                 }
             }
