@@ -44,20 +44,20 @@ def source_data(parquet_reader):
 @pytest.mark.smoke
 def test_check_dataset_is_not_empty(source_data, data_quality_library):
     data_quality_library.check_dataset_is_not_empty(source_data)
-#
-# @pytest.mark.smoke
-# def test_check_duplicates(source_data, data_quality_library):
-#     data_quality_library.check_duplicates(source_data)
-#
-# @pytest.mark.smoke
-# def test_check_not_null_values(source_data, data_quality_library):
-#     columns_to_check = ["facility_type", "visit_date", "avg_time_spent"]
-#     data_quality_library.check_not_null_values(source_data,column_names=columns_to_check)
-#
-# @pytest.mark.source_to_target
-# def test_check_count(source_data, target_data, data_quality_library):
-#     data_quality_library.check_count(source_data, target_data)
-#
-# @pytest.mark.source_to_target
-# def test_check_data_full_data_set(source_data, target_data, data_quality_library):
-#     data_quality_library.check_data_full_data_set(source_data, target_data)
+
+@pytest.mark.smoke
+def test_check_duplicates(source_data, data_quality_library):
+    data_quality_library.check_duplicates(source_data)
+
+@pytest.mark.smoke
+def test_check_not_null_values(source_data, data_quality_library):
+    columns_to_check = ["facility_type", "visit_date", "avg_time_spent"]
+    data_quality_library.check_not_null_values(source_data,column_names=columns_to_check)
+
+@pytest.mark.source_to_target
+def test_check_count(source_data, target_data, data_quality_library):
+    data_quality_library.check_count(source_data, target_data)
+
+@pytest.mark.source_to_target
+def test_check_data_full_data_set(source_data, target_data, data_quality_library):
+    data_quality_library.check_data_full_data_set(source_data, target_data)
