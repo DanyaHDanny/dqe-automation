@@ -100,7 +100,7 @@
 pipeline {
     agent any
     environment {
-        TEST_CREDS = credentials('5a5d466f-73b1-4f41-bd24-91ab508656a3')
+        TEST_CREDS = credentials('db')
     }
     stages {
         stage('Test') {
