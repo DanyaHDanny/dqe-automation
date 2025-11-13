@@ -55,6 +55,7 @@ pipeline {
                     echo "Using parquet path: ${parquet_path}"
 
                     // Run pytest with credentials and HTML report
+
                     sh """
                         cd "${PROJECT_DIR}"
                         . venv/bin/activate
