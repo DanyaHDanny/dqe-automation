@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        # Configure DB connection and file paths here
         DB_CREDENTIALS = credentials('5a5d466f-73b1-4f41-bd24-91ab508656a3')
         DB_NAME = 'mydatabase'
         PYTHONPATH = "${WORKSPACE}"
