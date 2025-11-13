@@ -47,7 +47,7 @@ pipeline {
         stage('Run Data Quality Tests') {
             steps {
                 sh """
-                    mkdir -p "${PROJECT_DIR}/${REPORT_DIR}"
+                    mkdir -p "${JENKINS_PARQUET_PATH}/${REPORT_DIR}"
                     parquet_path="\${JENKINS_PARQUET_PATH:-\${LOCAL_PARQUET_PATH}}"
                     echo "Using parquet path: \$parquet_path"
 
@@ -75,7 +75,7 @@ pipeline {
             echo 'Pipeline execution completed.'
             script {
                 node {
-                    archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true, allowEmptyArchive: true
+                    archiveArtifacts artifacts: "${JENKINS_PARQUET_PATH}/${REPORT_DIR}/*.html", fingerprint: true, allowEmptyArchive: true
                 }
             }
         }
