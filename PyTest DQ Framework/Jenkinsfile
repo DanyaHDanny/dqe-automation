@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+
+    environment {
+        # Configure DB connection and file paths here
+        DB_USER = credentials('db_user')            // stored in Jenkins credentials
+        DB_PASSWORD = credentials('db_password')    // stored in Jenkins credentials
+        DB_NAME = 'dq_database'
+        PYTHONPATH = "${WORKSPACE}"
+        LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
+        JENKINS_PARQUET_PATH = "/root/parquet_data"
+        REPORT_DIR = "reports"
+    }
+
+    stages {
+        stage('Prepare System') {
+            steps {
+                script {
+                    sh '''
+                        apt-get update
+                        apt-get install -y libpq-dev python3 python3-pip python3-venv
+                    '''
+                }
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                git branch: 'pytest_dq_framework', url: 'https://github.com/DanyaHDanny/dqe-automation'
+            }
+        }
+
+        stage('Set Up Environment') {
+            steps {
+                script {
+                    sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    '''
+                }
+            }
+        }
+
+        stage('Run Data Quality Tests') {
+            steps {
+                script {
+                    // Create reports directory
+                    sh 'mkdir -p ${REPORT_DIR}'
+
+                    // Determine which parquet path to use
+                    def parquet_path = env.JENKINS_PARQUET_PATH ?: env.LOCAL_PARQUET_PATH
+                    echo "Using parquet path: ${parquet_path}"
+
+                    // Run pytest with parameters
+                    sh """
+                        . venv/bin/activate
+                        export PYTHONPATH=$WORKSPACE
+                        pytest --db_user ${DB_USER} \
+                               --db_password ${DB_PASSWORD} \
+                               --html=${REPORT_DIR}/report_$(date +%Y%m%d_%H%M%S).html \
+                               --self-contained-html -v
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+            archiveArtifacts artifacts: 'reports/*.html', fingerprint: true
+        }
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the HTML report in Jenkins artifacts.'
+        }
+    }
+}
