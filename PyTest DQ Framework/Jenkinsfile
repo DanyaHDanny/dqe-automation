@@ -80,11 +80,8 @@ pipeline {
             echo 'Pipeline execution completed.'
 
         }
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed. Check console output and artifacts.'
-        }
+        success { echo 'DQ checks passed!' }
+        unstable { echo 'DQ checks failed — see report!' }
+        failure { echo 'Pipeline error (not test failure)' }
     }
 }
