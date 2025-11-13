@@ -42,6 +42,9 @@ pipeline {
         stage('Run Data Quality Tests') {
             steps {
                 script {
+                    echo "DB Username: ${DB_CREDENTIALS_USR}"
+                    echo "DB Password: ${DB_CREDENTIALS_PSW}"
+
                     def parquet_path = env.JENKINS_PARQUET_PATH ?: env.LOCAL_PARQUET_PATH
                     echo "Using parquet path: ${parquet_path}"
 
