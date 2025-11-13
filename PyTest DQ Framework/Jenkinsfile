@@ -54,7 +54,9 @@ pipeline {
                     cd "${PROJECT_DIR}"
                     . venv/bin/activate
                     export PYTHONPATH="\$WORKSPACE"
-                    export PARQUET_ROOT_PATH="\$parquet_path"  # Added: For test fixtures
+                    export PARQUET_ROOT_PATH="\$parquet_path"
+
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S
 
 
                     pytest \\
@@ -63,7 +65,7 @@ pipeline {
                         --db_password "${DB_CREDENTIALS_PSW}" \\
                         --db_name "${DB_NAME}" \\
                         --db_port 5432\\
-                        --html="${REPORT_DIR}/report_\$(date +%Y%m%d_%H%M%S).html" \\
+                        --html=${JENKINS_PARQUET_PATH}/${REPORT_DIR}/report_${TIMESTAMP}.html \\
                         --self-contained-html -v
                 """
             }
