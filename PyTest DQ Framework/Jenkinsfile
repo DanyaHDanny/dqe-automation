@@ -4,6 +4,7 @@ pipeline {
     environment {
         // Jenkins credential: Username with password
         DB_CREDENTIALS = credentials('db')
+        DB_HOST='postgres'
         DB_NAME = 'mydatabase'
         PYTHONPATH = "${WORKSPACE}"
         LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
@@ -57,9 +58,11 @@ pipeline {
 
                     # Run pytest securely
                     pytest \\
+                        --db_host "${DB_HOST}"\\
                         --db_user "${DB_CREDENTIALS_USR}" \\
                         --db_password "${DB_CREDENTIALS_PSW}" \\
-                        --db_name "${DB_NAME}"  # Added: If needed by fixtures
+                        --db_name "${DB_NAME}"  # Added: If needed by fixtures\\
+                        --db_port 5432\\
                         --html="${REPORT_DIR}/report_\$(date +%Y%m%d_%H%M%S).html" \\
                         --self-contained-html -v
                 """
