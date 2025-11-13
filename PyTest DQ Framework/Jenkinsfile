@@ -26,7 +26,7 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git branch: 'pytest_dq_framework', url: 'https://github.com/DanyaHDanny/dqe-automation'
+                git branch: 'pytest_dq_framework', url: 'https://github.com/vlad89buzan/dqe-automation.git'
             }
         }
 
@@ -34,6 +34,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        cd "PyTest DQ Framework"
                         python3 -m venv venv
                         . venv/bin/activate
                         pip install --upgrade pip
