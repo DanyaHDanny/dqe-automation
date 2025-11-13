@@ -2,12 +2,14 @@ pipeline {
     agent any
 
     environment {
+        // Jenkins credential: Username with password
         DB_CREDENTIALS = credentials('5a5d466f-73b1-4f41-bd24-91ab508656a3')
         DB_NAME = 'mydatabase'
         PYTHONPATH = "${WORKSPACE}"
         LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
         JENKINS_PARQUET_PATH = "/root/parquet_data"
         REPORT_DIR = "reports"
+        PROJECT_DIR = "PyTest DQ Framework"
     }
 
     stages {
@@ -31,13 +33,13 @@ pipeline {
         stage('Set Up Environment') {
             steps {
                 script {
-                    sh '''
-                        cd "PyTest DQ Framework"
+                    sh """
+                        cd "${PROJECT_DIR}"
                         python3 -m venv venv
                         . venv/bin/activate
                         pip install --upgrade pip
                         pip install -r requirements.txt
-                    '''
+                    """
                 }
             }
         }
@@ -45,21 +47,22 @@ pipeline {
         stage('Run Data Quality Tests') {
             steps {
                 script {
-                    // Create reports directory
-                    sh 'mkdir -p ${REPORT_DIR}'
+                    // Ensure reports directory exists
+                    sh "mkdir -p ${PROJECT_DIR}/${REPORT_DIR}"
 
-                    // Determine which parquet path to use
+                    // Determine parquet path
                     def parquet_path = env.JENKINS_PARQUET_PATH ?: env.LOCAL_PARQUET_PATH
                     echo "Using parquet path: ${parquet_path}"
 
-                    // Run pytest with parameters
+                    // Run pytest with credentials and HTML report
                     sh """
+                        cd "${PROJECT_DIR}"
                         . venv/bin/activate
-                        export PYTHONPATH=$WORKSPACE
-                        pytest --db_user ${DB_CREDENTIALS_USR} \
-                        --db_password ${DB_CREDENTIALS_PSW} \
-                        --html=${REPORT_DIR}/report_\$(date +%Y%m%d_%H%M%S).html \
-                        --self-contained-html -v
+                        export PYTHONPATH=\$WORKSPACE
+                        pytest --db_user ${DB_CREDENTIALS_USR} \\
+                               --db_password ${DB_CREDENTIALS_PSW} \\
+                               --html=${REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html \\
+                               --self-contained-html -v
                     """
                 }
             }
@@ -69,7 +72,10 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed.'
-            archiveArtifacts artifacts: 'reports/*.html', fingerprint: true
+            script {
+                // Archive HTML reports safely
+                archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
+            }
         }
         success {
             echo 'Pipeline executed successfully!'
