@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        // Jenkins credential: Username with password
         DB_CREDENTIALS = credentials('5a5d466f-73b1-4f41-bd24-91ab508656a3')
         DB_NAME = 'mydatabase'
         PYTHONPATH = "${WORKSPACE}"
@@ -14,10 +15,12 @@ pipeline {
     stages {
         stage('Prepare System') {
             steps {
-                sh '''
-                    apt-get update
-                    apt-get install -y libpq-dev python3 python3-pip python3-venv
-                '''
+                script {
+                    sh '''
+                        apt-get update
+                        apt-get install -y libpq-dev python3 python3-pip python3-venv
+                    '''
+                }
             }
         }
 
@@ -29,33 +32,45 @@ pipeline {
 
         stage('Set Up Environment') {
             steps {
-                sh """
-                    cd "${env.PROJECT_DIR}"
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                """
+                script {
+                    sh """
+                        cd "${PROJECT_DIR}"
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    """
+                }
+            }
+        }
+
+        stage('Debug Credentials') {
+            steps {
+                script {
+                    echo "DB Username from credentials: ${DB_CREDENTIALS_USR}"
+                    // Do NOT echo password for security reasons
+                }
             }
         }
 
         stage('Run Data Quality Tests') {
             steps {
                 script {
-                    echo "DB Username: ${DB_CREDENTIALS_USR}"
-                    echo "DB Password: ${DB_CREDENTIALS_PSW}"
+                    // Ensure reports directory exists
+                    sh "mkdir -p ${PROJECT_DIR}/${REPORT_DIR}"
 
+                    // Determine parquet path
                     def parquet_path = env.JENKINS_PARQUET_PATH ?: env.LOCAL_PARQUET_PATH
                     echo "Using parquet path: ${parquet_path}"
 
+                    // Run pytest with credentials and HTML report
                     sh """
-                        cd "${env.PROJECT_DIR}"
-                        mkdir -p "${env.REPORT_DIR}"
+                        cd "${PROJECT_DIR}"
                         . venv/bin/activate
                         export PYTHONPATH=\$WORKSPACE
                         pytest --db_user ${DB_CREDENTIALS_USR} \\
                                --db_password ${DB_CREDENTIALS_PSW} \\
-                               --html=${env.REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html \\
+                               --html=${REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html \\
                                --self-contained-html -v
                     """
                 }
@@ -65,10 +80,13 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline execution completed.'
             script {
-                // archiveArtifacts must run inside agent context
-                archiveArtifacts artifacts: "${env.PROJECT_DIR}/${env.REPORT_DIR}/*.html", fingerprint: true
+                echo 'Pipeline execution completed.'
+
+                // Archive artifacts inside node block
+                node {
+                    archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
+                }
             }
         }
         success {
