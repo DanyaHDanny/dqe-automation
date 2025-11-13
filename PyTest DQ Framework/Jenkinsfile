@@ -1,112 +1,99 @@
-// pipeline {
-//     agent any
-//
-//     environment {
-//         // Jenkins credential: Username with password
-//         DB_CREDENTIALS = credentials('5a5d466f-73b1-4f41-bd24-91ab508656a3')
-//         DB_NAME = 'mydatabase'
-//         PYTHONPATH = "${WORKSPACE}"
-//         LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
-//         JENKINS_PARQUET_PATH = "/root/parquet_data"
-//         REPORT_DIR = "reports"
-//         PROJECT_DIR = "PyTest DQ Framework"
-//     }
-//
-//     stages {
-//         stage('Prepare System') {
-//             steps {
-//                 script {
-//                     sh '''
-//                         apt-get update
-//                         apt-get install -y libpq-dev python3 python3-pip python3-venv
-//                     '''
-//                 }
-//             }
-//         }
-//
-//         stage('Clone Repository') {
-//             steps {
-//                 git branch: 'pytest_dq_framework', url: 'https://github.com/vlad89buzan/dqe-automation.git'
-//             }
-//         }
-//
-//         stage('Set Up Environment') {
-//             steps {
-//                 script {
-//                     sh """
-//                         cd "${PROJECT_DIR}"
-//                         python3 -m venv venv
-//                         . venv/bin/activate
-//                         pip install --upgrade pip
-//                         pip install -r requirements.txt
-//                     """
-//                 }
-//             }
-//         }
-//
-//         stage('Debug Credentials') {
-//             steps {
-//                 script {
-//                     echo "DB Username from credentials: ${DB_CREDENTIALS_USR}"
-//                     // Do NOT echo password for security reasons
-//                 }
-//             }
-//         }
-//
-//         stage('Run Data Quality Tests') {
-//             steps {
-//                 script {
-//                     // Ensure reports directory exists
-//                     sh "mkdir -p ${PROJECT_DIR}/${REPORT_DIR}"
-//
-//                     // Determine parquet path
-//                     def parquet_path = env.JENKINS_PARQUET_PATH ?: env.LOCAL_PARQUET_PATH
-//                     echo "Using parquet path: ${parquet_path}"
-//
-//                     // Run pytest with credentials and HTML report
-//                     sh """
-//                         cd "${PROJECT_DIR}"
-//                         . venv/bin/activate
-//                         export PYTHONPATH=\$WORKSPACE
-//                         pytest --db_user ${DB_CREDENTIALS_USR} \\
-//                                --db_password ${DB_CREDENTIALS_PSW} \\
-//                                --html=${REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html \\
-//                                --self-contained-html -v
-//                     """
-//                 }
-//             }
-//         }
-//     }
-//
-//     post {
-//         always {
-//             script {
-//                 echo 'Pipeline execution completed.'
-//
-//                 // Archive artifacts inside node block
-//                 node {
-//                     archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
-//                 }
-//             }
-//         }
-//         success {
-//             echo 'Pipeline executed successfully!'
-//         }
-//         failure {
-//             echo 'Pipeline failed. Please check the HTML report in Jenkins artifacts.'
-//         }
-//     }
-// }
 pipeline {
     agent any
+
     environment {
-        TEST_CREDS = credentials('db')
+        // Jenkins credential: Username with password
+        DB_CREDENTIALS = credentials('db')
+        DB_NAME = 'mydatabase'
+        PYTHONPATH = "${WORKSPACE}"
+        LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
+        JENKINS_PARQUET_PATH = "/root/parquet_data"
+        REPORT_DIR = "reports"
+        PROJECT_DIR = "PyTest DQ Framework"
     }
+
     stages {
-        stage('Test') {
+        stage('Prepare System') {
             steps {
-                sh 'echo $TEST_CREDS_USR'  // This should print the username if resolved
+                script {
+                    sh '''
+                        apt-get update
+                        apt-get install -y libpq-dev python3 python3-pip python3-venv
+                    '''
+                }
             }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                git branch: 'pytest_dq_framework', url: 'https://github.com/vlad89buzan/dqe-automation.git'
+            }
+        }
+
+        stage('Set Up Environment') {
+            steps {
+                script {
+                    sh """
+                        cd "${PROJECT_DIR}"
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    """
+                }
+            }
+        }
+
+        stage('Debug Credentials') {
+            steps {
+                script {
+                    echo "DB Username from credentials: ${DB_CREDENTIALS_USR}"
+                    // Do NOT echo password for security reasons
+                }
+            }
+        }
+
+        stage('Run Data Quality Tests') {
+            steps {
+                script {
+                    // Ensure reports directory exists
+                    sh "mkdir -p ${PROJECT_DIR}/${REPORT_DIR}"
+
+                    // Determine parquet path
+                    def parquet_path = env.JENKINS_PARQUET_PATH ?: env.LOCAL_PARQUET_PATH
+                    echo "Using parquet path: ${parquet_path}"
+
+                    // Run pytest with credentials and HTML report
+                    sh """
+                        cd "${PROJECT_DIR}"
+                        . venv/bin/activate
+                        export PYTHONPATH=\$WORKSPACE
+                        pytest --db_user ${DB_CREDENTIALS_USR} \\
+                               --db_password ${DB_CREDENTIALS_PSW} \\
+                               --html=${REPORT_DIR}/report_\\\$(date +%Y%m%d_%H%M%S).html \\
+                               --self-contained-html -v
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo 'Pipeline execution completed.'
+
+                // Archive artifacts inside node block
+                node {
+                    archiveArtifacts artifacts: "${PROJECT_DIR}/${REPORT_DIR}/*.html", fingerprint: true
+                }
+            }
+        }
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the HTML report in Jenkins artifacts.'
         }
     }
 }
