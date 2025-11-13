@@ -2,12 +2,10 @@ pipeline {
     agent any
 
     environment {
-        // Jenkins credential: Username with password
         DB_CREDENTIALS = credentials('db')
-        DB_HOST='postgres'
+        DB_HOST = 'postgres'
         DB_NAME = 'mydatabase'
         PYTHONPATH = "${WORKSPACE}"
-        LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
         JENKINS_PARQUET_PATH = "/parquet_data"
         REPORT_DIR = "reports"
         PROJECT_DIR = "PyTest DQ Framework"
@@ -23,51 +21,59 @@ pipeline {
             }
         }
 
-        // Removed 'Clone Repository' stage as it's redundant
-
         stage('Set Up Environment') {
             steps {
-                sh """
-                    cd "${PROJECT_DIR}"
+                sh '''
+                    cd "${WORKSPACE}/${PROJECT_DIR}"
                     python3 -m venv venv
-                    # Use bash to source venv properly
                     . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
-                """
+                '''
             }
         }
 
         stage('Debug Credentials') {
             steps {
-                echo "DB Username from credentials: ${DB_CREDENTIALS_USR}"
+                echo "DB Username: ${DB_CREDENTIALS_USR}"
             }
         }
 
         stage('Run Data Quality Tests') {
+            environment {
+                DB_PASSWORD = '${DB_CREDENTIALS_PSW}'
+            }
             steps {
-                sh """
-                    mkdir -p "${JENKINS_PARQUET_PATH}/${REPORT_DIR}"
-                    parquet_path="\${JENKINS_PARQUET_PATH:-\${LOCAL_PARQUET_PATH}}"
-                    echo "Using parquet path: \$parquet_path"
+                sh '''
+                    set -e
 
-                    cd "${PROJECT_DIR}"
+                    # Define paths
+                    REPORT_PATH="${JENKINS_PARQUET_PATH}/${REPORT_DIR}"
+                    mkdir -p "$REPORT_PATH"
+                    echo "Using parquet path: ${JENKINS_PARQUET_PATH}"
+
+                    # Generate timestamp
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                    REPORT_FILE="$REPORT_PATH/report_${TIMESTAMP}.html"
+
+                    # Activate venv
+                    cd "${WORKSPACE}/${PROJECT_DIR}"
                     . venv/bin/activate
-                    export PYTHONPATH="\$WORKSPACE"
-                    export PARQUET_ROOT_PATH="\$parquet_path"
 
-                    TIMESTAMP=$(date +%Y%m%d_%H%M%S
-
+                    export PYTHONPATH="${WORKSPACE}"
+                    export PARQUET_ROOT_PATH="${JENKINS_PARQUET_PATH}"
 
                     pytest \\
-                        --db_host "${DB_HOST}"\\
+                        --db_host "${DB_HOST}" \\
                         --db_user "${DB_CREDENTIALS_USR}" \\
-                        --db_password "${DB_CREDENTIALS_PSW}" \\
+                        --db_password "$DB_PASSWORD" \\
                         --db_name "${DB_NAME}" \\
-                        --db_port 5432\\
-                        --html=${JENKINS_PARQUET_PATH}/${REPORT_DIR}/report_${TIMESTAMP}.html \\
+                        --db_port 5432 \\
+                        --html="$REPORT_FILE" \\
                         --self-contained-html -v
-                """
+
+                    echo "Report generated: $REPORT_FILE"
+                '''
             }
         }
     }
@@ -75,17 +81,17 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed.'
-            script {
-                node {
-                    archiveArtifacts artifacts: "${JENKINS_PARQUET_PATH}/${REPORT_DIR}/*.html", fingerprint: true, allowEmptyArchive: true
-                }
-            }
+            archiveArtifacts(
+                artifacts: '${JENKINS_PARQUET_PATH}/${REPORT_DIR}/*.html',
+                fingerprint: true,
+                allowEmptyArchive: true
+            )
         }
         success {
             echo 'Pipeline executed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Please check the HTML report in Jenkins artifacts.'
+            echo 'Pipeline failed. Check console output and artifacts.'
         }
     }
 }
