@@ -56,12 +56,12 @@ pipeline {
                     export PYTHONPATH="\$WORKSPACE"
                     export PARQUET_ROOT_PATH="\$parquet_path"  # Added: For test fixtures
 
-                    # Run pytest securely
+
                     pytest \\
                         --db_host "${DB_HOST}"\\
                         --db_user "${DB_CREDENTIALS_USR}" \\
                         --db_password "${DB_CREDENTIALS_PSW}" \\
-                        --db_name "${DB_NAME}"  # Added: If needed by fixtures\\
+                        --db_name "${DB_NAME}" \\
                         --db_port 5432\\
                         --html="${REPORT_DIR}/report_\$(date +%Y%m%d_%H%M%S).html" \\
                         --self-contained-html -v
