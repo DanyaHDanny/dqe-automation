@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 
 
 class PostgresConnectorContextManager:
-    def __init__(self, db_host: str, db_user: str, db_password: str, db_port: int = 5434, db_name='mydatabase', ):
+    def __init__(self, db_host: str, db_user: str, db_password: str, db_port: int, db_name='mydatabase', ):
         self.db_host = db_host
         self.db_name = db_name
         self.db_user = db_user
