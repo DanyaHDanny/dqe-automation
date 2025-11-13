@@ -3,9 +3,8 @@ pipeline {
 
     environment {
         # Configure DB connection and file paths here
-        DB_USER = credentials('db_user')            // stored in Jenkins credentials
-        DB_PASSWORD = credentials('db_password')    // stored in Jenkins credentials
-        DB_NAME = 'dq_database'
+        DB_CREDENTIALS = credentials('5a5d466f-73b1-4f41-bd24-91ab508656a3')
+        DB_NAME = 'mydatabase'
         PYTHONPATH = "${WORKSPACE}"
         LOCAL_PARQUET_PATH = "C:/Users/Vladyslav_Buzan/Documents/parquet_data"
         JENKINS_PARQUET_PATH = "/root/parquet_data"
@@ -58,8 +57,8 @@ pipeline {
                     sh """
                         . venv/bin/activate
                         export PYTHONPATH=$WORKSPACE
-                        pytest --db_user ${DB_USER} \
-                               --db_password ${DB_PASSWORD} \
+                        pytest --db_user ${DB_CREDENTIALS_USR} \
+                               --db_password ${DB_CREDENTIALS_PSW} \
                                --html=${REPORT_DIR}/report_$(date +%Y%m%d_%H%M%S).html \
                                --self-contained-html -v
                     """
