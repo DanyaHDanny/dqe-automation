@@ -40,9 +40,6 @@ pipeline {
         }
 
         stage('Run Data Quality Tests') {
-            environment {
-                DB_PASSWORD = '${DB_CREDENTIALS_PSW}'
-            }
             steps {
                 sh '''
                     set -e
@@ -66,7 +63,7 @@ pipeline {
                     pytest \\
                         --db_host "${DB_HOST}" \\
                         --db_user "${DB_CREDENTIALS_USR}" \\
-                        --db_password "$DB_PASSWORD" \\
+                        --db_password "${DB_CREDENTIALS_PSW}" \\
                         --db_name "${DB_NAME}" \\
                         --db_port 5432 \\
                         --html="$REPORT_FILE" \\
@@ -81,11 +78,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed.'
-            archiveArtifacts(
-                artifacts: '${JENKINS_PARQUET_PATH}/${REPORT_DIR}/*.html',
-                fingerprint: true,
-                allowEmptyArchive: true
-            )
+
         }
         success {
             echo 'Pipeline executed successfully!'
