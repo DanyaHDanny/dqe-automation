@@ -1,29 +1,39 @@
 import pytest
 import pandas as pd
 
+def pytest_addoption(parser):
+    parser.addoption(
+        '--path-to-file',
+        action='store',
+        default='player_data.csv',
+        help="Path to CSV file"
+    )
+
 # Fixture to read the CSV file
 @pytest.fixture(scope='session')
-def data(path_to_file):
-    return pd.read_csv(path_to_file)
+def data(request):
+    return pd.read_csv(request.config.getoption("--path-to-file"))
 
 # Fixture to validate the schema of the file
 @pytest.fixture(scope='session')
-def validate_schema(actual_schema, expected_schema):
-    errors = []
+def validate_schema():
+    def validate(actual_schema, expected_schema):
+        errors = []
+        # Missing columns
+        missing = [col for col in expected_schema if col not in actual_schema]
+        if missing:
+            errors.append(f"Missing columns: {missing}")
+        # Extra columns
+        extra = [col for col in actual_schema if col not in expected_schema]
+        if extra:
+            errors.append(f"Extra columns: {extra}")
+        # Column order
+        for i, col in enumerate(expected_schema):
+            if i < len(actual_schema) and actual_schema[i] != col:
+                errors.append(f"Column order mismatch at position {i}: expected {col}, got {actual_schema[i]}")
+        assert not errors, "\n".join(errors)
+    return validate
 
-    missing = [col for col in expected_schema if col not in actual_schema]
-    if missing:
-        errors.append(f"Missing columns: {missing}")
-
-    extra = [col for col in actual_schema if col not in expected_schema]
-    if extra:
-        errors.append(f"Extra columns: {extra}")
-
-    for i, col in enumerate(expected_schema):
-        if i < len(actual_schema) and actual_schema[i] != col:
-            errors.append(f"Column order mismatch at position {i}: expected {col}, got {actual_schema[i]}")
-
-    assert not errors, "\n".join(errors)
 
 
 # Pytest hook to mark unmarked tests with a custom mark
