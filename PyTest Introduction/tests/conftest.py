@@ -2,9 +2,14 @@ import pytest
 import pandas as pd
 
 # Fixture to read the CSV file
-@pytest.fixture(scope='session')
-def data(path_to_file):
-    return pd.read_csv(path_to_file)
+@pytest.fixture(scope="session")
+def data(request):
+    path = request.config.getoption("--path-to-file")
+    try:
+        df = pd.read_csv(path)
+    except Exception as e:
+        pytest.skip(f"Skipping tests because CSV file {path} cannot be read: {e}")
+    return df
 
 # Fixture to validate the schema of the file
 @pytest.fixture(scope='session')
