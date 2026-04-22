@@ -1,11 +1,17 @@
 pipeline {
+    agent {
+        docker {
+            image 'ubuntu:22.04'
+            args '-u root'
+        }
+    }
     agent any
     stages {
         stage('Update Packages') {
             steps {
                 script {
                     // Update the package list
-                    sh 'sudo apt-get update'
+                    sh 'apt-get update'
                     sh 'apt-get install -y libpq-dev'
                 }
             }
